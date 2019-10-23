@@ -1,6 +1,7 @@
 // Last updated: 2019-10-22
-#include <iostream>
+#include <algorithm>
 #include <fstream>
+#include <iostream>
 #include <set> // multiset
 #include <stdlib.h> // absolute value function
 #include <utility> // make_pair
@@ -55,12 +56,13 @@ void match_pairs()
 
     puts("Building search tree...");
 
-    // this part is slow, takes 1.3 s
-    multiset<int> neg_scores;
+    vector<int> scores;
     for (vector<PII>::iterator it = neg_people.begin(); it != neg_people.end(); ++it)
-        neg_scores.insert(it->second);
+        scores.push_back(it->second);
 
-    // 1.936 s to run to this line
+    sort(scores.begin(), scores.end());
+
+    multiset<int> neg_scores(scores.begin(), scores.end());
 
 
     puts("Matching...");
@@ -118,7 +120,7 @@ void match_pairs()
 
     puts("Writing output...");
 
-    ofstream file_out("../../pipeline/cpp_orig_output.txt");
+    ofstream file_out("../../pipeline/cpp_v2_out.txt");
 
     for (vector<PII>::iterator it = matched_scores.begin(); it != matched_scores.end(); ++it)
         file_out << it->first << "\t" << it->second << endl;
