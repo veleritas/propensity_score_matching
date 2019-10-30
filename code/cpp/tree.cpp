@@ -1,4 +1,4 @@
-// Last updated: 2019-10-22
+// Last updated: 2019-10-23
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -71,6 +71,130 @@ int tree_seach_smaller(int target, const vector<int> &tree_val, const vector<int
 
     return max_pos;
 }
+
+int tree_search_bigger(int target, const vector<int> &tree_val, const vector<int> &tree_left, const vector<int> &tree_right)
+{
+    /*
+    return the position of the smallest value in the tree that
+    is larger than or equal to the target value
+    */
+
+    int min_pos = -1;
+
+    int cur = 0;
+    while (cur != -1)
+    {
+        if (tree_val[cur] == target)
+            return cur;
+
+        if (tree_val[cur] < target)
+            cur = tree_right[cur];
+        else
+        {
+            min_pos = cur;
+            cur = tree_left[cur];
+        }
+    }
+
+    return min_pos;
+}
+
+
+
+void tree_delete(int pos, vector<int> &tree_val, vector<int> &tree_parent, vector<int> &tree_left, vector<int> &tree_right, vector<int> &tree_count)
+{
+    // delete one instance of the node given at position pos
+    // modifies the tree passed to this function by reference
+
+    tree_count[pos]--;
+
+    if (tree_count[pos] > 0)
+        return;
+
+    // what about when it's the root node?
+
+
+
+    bool leaf_left = (tree_left[pos] == -1);
+    bool leaf_right = (tree_right[pos] == -1);
+
+    // need to remove this node
+
+    // leaf node
+    if (leaf_left && leaf_right)
+    {
+        if (pos == 0)
+            return;
+
+        int parent = tree_parent[pos];
+
+        if (tree_left[parent] == pos)
+            tree_left[parent] = -1;
+        else
+            tree_right[parent] = -1;
+
+        return;
+    }
+
+
+
+    if (leaf_left)
+    {
+        int child = tree_right[pos];
+
+        if (pos == 0)
+        {
+            tree_val[0] = tree_val[child];
+            tree_count[0] = tree_count[child];
+
+
+
+        }
+
+
+
+
+
+
+
+        int parent = tree_parent[pos];
+        int child = tree_right[pos];
+
+        tree_parent[child] = parent;
+
+        if (tree_left[parent] == pos)
+            tree_left[parent] = child;
+        else
+            tree_right[parent] = child;
+
+        return;
+    }
+
+    if (leaf_right)
+    {
+        int parent = tree_parent[pos];
+        int child = tree_left[pos];
+
+        tree_parent[child] = parent;
+
+        if (tree_left[parent] == pos)
+            tree_left[parent] = child;
+        else
+            tree_right[parent] = child;
+
+        return;
+    }
+
+
+
+
+
+
+
+}
+
+
+
 
 
 void match_pairs()
@@ -191,26 +315,48 @@ void match_pairs()
 
 void test()
 {
-    vector<int> uniq_scores = {1, 5, 10, 20, 50};
+    vector<int> neg_people = {1, 2, 3, 3, 4, 5, 6, 7};
 
+    sort(neg_people.begin(), neg_people.end());
+
+    vector<int> uniq_scores;
+    vector<int> score_counts;
+
+    // build person index and remove duplicates
+    for (vector<int>::iterator it = neg_people.begin(); it != neg_people.end(); ++it)
+        if (uniq_scores.empty() || ((*it) != uniq_scores.back()))
+        {
+            uniq_scores.push_back(*it);
+            score_counts.push_back(1);
+        }
+        else
+            score_counts.back()++;
+
+/*
+    int ja = uniq_scores.size();
+    for (int i = 0; i<ja; i++)
+        cout << uniq_scores[i] << " " << score_counts[i] << endl;
+*/
+
+
+    puts("Building tree...");
 
     // build tree
     int M = uniq_scores.size();
-    int N = 1; // size of our tree
+    int N = 1;
     while (M)
     {
-        N <<= 1;
         M >>= 1;
+        N <<= 1;
     }
 
     N--;
-
 
     vector<int> tree_val(N);
     vector<int> tree_parent(N);
     vector<int> tree_left(N);
     vector<int> tree_right(N);
-
+    vector<int> tree_count(N); // number of remaining instances of this value
 
     vector<tuple<int, int, int> > stack; // left, right, position
     stack.push_back(make_tuple(0, uniq_scores.size(), 0));
@@ -230,6 +376,7 @@ void test()
             tree_parent[pos] = (pos - 1) / 2;
             tree_left[pos] = -1;
             tree_right[pos] = -1;
+            tree_count[pos] = score_counts[left];
         }
         else
         {
@@ -237,6 +384,7 @@ void test()
 
             tree_val[pos] = uniq_scores[middle];
             tree_parent[pos] = (pos - 1) / 2;
+            tree_count[pos] = score_counts[middle];
 
             if (left < middle)
             {
@@ -257,8 +405,36 @@ void test()
     }
 
 
+    puts("pre delete");
+
     for (int i=0; i<N; i++)
-        printf("%d %d %d %d\n", tree_val[i], tree_parent[i], tree_left[i], tree_right[i]);
+        printf("%d %d %d %d %d\n", tree_val[i], tree_parent[i], tree_left[i], tree_right[i], tree_count[i]);
+
+
+    tree_delete(4, tree_val, tree_parent, tree_left, tree_right, tree_count);
+
+    puts("after first delete");
+    for (int i=0; i<N; i++)
+        printf("%d %d %d %d %d\n", tree_val[i], tree_parent[i], tree_left[i], tree_right[i], tree_count[i]);
+
+
+    tree_delete(4, tree_val, tree_parent, tree_left, tree_right, tree_count);
+
+    puts("after second delete");
+    for (int i=0; i<N; i++)
+        printf("%d %d %d %d %d\n", tree_val[i], tree_parent[i], tree_left[i], tree_right[i], tree_count[i]);
+
+
+
+    return;
+
+
+
+
+
+
+
+
 
     puts("");
 
