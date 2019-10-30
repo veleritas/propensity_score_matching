@@ -44,6 +44,35 @@ bool sort_score(const PII &a, const PII &b)
     return a.second < b.second;
 }
 
+
+int tree_seach_smaller(int target, const vector<int> &tree_val, const vector<int> &tree_left, const vector<int> &tree_right)
+{
+    /*
+    return the position index of the largest value in the tree that
+    is smaller than or equal to the target value
+    */
+
+    int max_pos = -1;
+
+    int cur = 0;
+    while (cur != -1)
+    {
+        if (tree_val[cur] == target)
+            return cur;
+
+        if (tree_val[cur] > target)
+            cur = tree_left[cur];
+        else
+        {
+            max_pos = cur;
+            cur = tree_right[cur];
+        }
+    }
+
+    return max_pos;
+}
+
+
 void match_pairs()
 {
     float caliper = 0.05;
@@ -69,19 +98,21 @@ void match_pairs()
     // 1.035 s to here
 
     vector<int> uniq_scores;
-    vector<vector<int> > neg_ppl_idx;
+    vector<int> score_counts;
 
     // build person index and remove duplicates
     for (vector<PII>::iterator it = neg_people.begin(); it != neg_people.end(); ++it)
         if (uniq_scores.empty() || (it->second != uniq_scores.back()))
         {
             uniq_scores.push_back(it->second);
-            neg_ppl_idx.push_back(vector<int>{it->first});
+            score_counts.push_back(1);
         }
         else
-            neg_ppl_idx.back().push_back(it->first);
+            score_counts.back()++;
 
-    // 1.336 s to here
+    // 1.110 s to here
+
+
 
 
     puts("Building tree...");
@@ -101,6 +132,7 @@ void match_pairs()
     vector<int> tree_parent(N);
     vector<int> tree_left(N);
     vector<int> tree_right(N);
+    vector<int> tree_count(N); // number of remaining instances of this value
 
     vector<tuple<int, int, int> > stack; // left, right, position
     stack.push_back(make_tuple(0, uniq_scores.size(), 0));
@@ -120,6 +152,7 @@ void match_pairs()
             tree_parent[pos] = (pos - 1) / 2;
             tree_left[pos] = -1;
             tree_right[pos] = -1;
+            tree_count[pos] = score_counts[left];
         }
         else
         {
@@ -127,6 +160,7 @@ void match_pairs()
 
             tree_val[pos] = uniq_scores[middle];
             tree_parent[pos] = (pos - 1) / 2;
+            tree_count[pos] = score_counts[middle];
 
             if (left < middle)
             {
@@ -157,7 +191,7 @@ void match_pairs()
 
 void test()
 {
-    vector<int> uniq_scores = {1, 2, 3, 4, 5};
+    vector<int> uniq_scores = {1, 5, 10, 20, 50};
 
 
     // build tree
@@ -190,11 +224,8 @@ void test()
         int right = get<1>(val);
         int pos = get<2>(val);
 
-        cout << left << " " << right << " " << pos << endl;
-
         if (left + 1 == right) // leaf node
         {
-            puts("leaf");
             tree_val[pos] = uniq_scores[left];
             tree_parent[pos] = (pos - 1) / 2;
             tree_left[pos] = -1;
@@ -202,7 +233,6 @@ void test()
         }
         else
         {
-            puts("tree");
             int middle = (left + right) / 2;
 
             tree_val[pos] = uniq_scores[middle];
@@ -228,14 +258,24 @@ void test()
 
 
     for (int i=0; i<N; i++)
-    {
         printf("%d %d %d %d\n", tree_val[i], tree_parent[i], tree_left[i], tree_right[i]);
+
+    puts("");
+
+    for (int i = 0; i<11; i++)
+    {
+        int pos = tree_seach_smaller(i, tree_val, tree_left, tree_right);
+        cout << i << " " << pos << endl;
+
     }
+
 
 }
 
 int main()
 {
+    test();
+    return 0;
 
     match_pairs();
 
