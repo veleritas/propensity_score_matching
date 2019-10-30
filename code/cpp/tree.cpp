@@ -200,11 +200,38 @@ void tree_delete(
 
 
 
+    // node has two children
+    int min_idx = tree_right[pos];
+
+    if (tree_left[min_idx] == -1)
+    {
+        tree_val[pos] = tree_val[min_idx];
+        tree_count[pos] = tree_count[min_idx];
+
+        tree_right[pos] = tree_right[min_idx];
+
+        int child = tree_right[min_idx];
+        if (child != -1)
+            tree_parent[child] = pos;
+
+        return;
+    }
+
+    while (tree_left[min_idx] != -1)
+        min_idx = tree_left[min_idx];
 
 
+    tree_val[pos] = tree_val[min_idx];
+    tree_count[pos] = tree_count[min_idx];
 
+    int min_parent = tree_parent[min_idx];
+    int min_child = tree_right[min_idx];
+
+    tree_left[min_parent] = min_child;
+
+    if (min_child != -1)
+        tree_parent[min_child] = min_parent;
 }
-
 
 void build_tree(
     const vector<int> &uniq_scores,
@@ -343,7 +370,7 @@ void test()
 {
 //    vector<int> neg_people = {1, 2, 3, 3, 4, 5, 6, 7};
 
-    vector<int> neg_people = {1, 2, 3, 4, 5};
+    vector<int> neg_people = {1, 5, 10, 20, 50};
 
 
 
@@ -392,14 +419,14 @@ void test()
 
 
 
-    tree_delete(4, tree_val, tree_parent, tree_left, tree_right, tree_count);
+    tree_delete(1, tree_val, tree_parent, tree_left, tree_right, tree_count);
 
     puts("after first delete");
     for (int i=0; i<N; i++)
         printf("%d %d %d %d %d\n", tree_val[i], tree_parent[i], tree_left[i], tree_right[i], tree_count[i]);
 
 
-    tree_delete(2, tree_val, tree_parent, tree_left, tree_right, tree_count);
+    tree_delete(1, tree_val, tree_parent, tree_left, tree_right, tree_count);
 
     puts("after second delete");
     for (int i=0; i<N; i++)
