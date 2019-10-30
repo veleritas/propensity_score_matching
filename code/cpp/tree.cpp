@@ -1,11 +1,12 @@
 // Last updated: 2019-10-23
+#include <algorithm>
+#include <assert.h>
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <tuple>
 #include <utility>
 #include <stdlib.h>
-#include <algorithm>
 using namespace std;
 
 typedef pair<int, int> PII;
@@ -45,7 +46,7 @@ bool sort_score(const PII &a, const PII &b)
 }
 
 
-int tree_seach_smaller(
+int tree_search_smaller(
     const int target,
     const vector<int> &tree_val,
     const vector<int> &tree_left,
@@ -316,7 +317,10 @@ void match_pairs()
     vector<PII> pos_people = data.first;
     vector<PII> neg_people = data.second;
 
-    // 0.664 s to here
+
+
+    // 1.059 s to here
+
 
 
     puts("Preparing data...");
@@ -324,7 +328,18 @@ void match_pairs()
     // sort by prop score only; MMI_ID in random order
     sort(neg_people.begin(), neg_people.end(), sort_score);
 
-    // 1.035 s to here
+
+
+
+
+
+    // 1.679 s to here
+
+
+
+
+
+
 
     vector<int> uniq_scores;
     vector<int> score_counts;
@@ -339,7 +354,10 @@ void match_pairs()
         else
             score_counts.back()++;
 
-    // 1.110 s to here
+
+
+    // 1.797 s to here
+
 
 
 
@@ -363,6 +381,79 @@ void match_pairs()
         uniq_scores, score_counts,
         tree_val, tree_parent, tree_left, tree_right, tree_count
     );
+
+
+    // 1.915 s to here
+
+
+
+
+
+
+
+    puts("Matching...");
+
+    vector<PII> matched_scores;
+
+    for (vector<PII>::iterator it = pos_people.begin(); (tree_val[0] != -1) && (it != pos_people.end()); ++it)
+    {
+        const int target = it->second;
+
+        int lower_idx = tree_search_smaller(target, tree_val, tree_left, tree_right);
+
+        int closest_idx = -1;
+
+        if (lower_idx == -1)
+        {
+            closest_idx = tree_search_bigger(target, tree_val, tree_left, tree_right);
+            assert (closest_idx != -1);
+        }
+        else
+            if (tree_val[lower_idx] == target)
+                closest_idx = lower_idx;
+            else
+            {
+                int higher_idx = tree_search_bigger(target, tree_val, tree_left, tree_right);
+
+                if (higher_idx == -1)
+                    closest_idx = lower_idx;
+                else
+                {
+                    if ((target - tree_val[lower_idx]) < (tree_val[higher_idx] - target))
+                        closest_idx = lower_idx;
+                    else
+                        closest_idx = higher_idx;
+                }
+            }
+
+        int best_score = tree_val[closest_idx];
+
+        if (abs(target - best_score) > MAX_DIST)
+            continue;
+
+        tree_delete(closest_idx, tree_val, tree_parent, tree_left, tree_right, tree_count);
+
+        matched_scores.push_back(make_pair(it->first, best_score));
+    }
+
+
+    // 2.187 s to here
+
+
+
+
+
+
+
+
+    puts("Writing output...");
+
+    ofstream file_out("../../pipeline/tree.txt");
+
+    for (vector<PII>::iterator it = matched_scores.begin(); it != matched_scores.end(); ++it)
+        file_out << it->first << "\t" << it->second << endl;
+
+    file_out.close();
 
 }
 
@@ -443,8 +534,6 @@ void test()
 
 int main()
 {
-    test();
-    return 0;
 
     match_pairs();
 
