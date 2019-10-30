@@ -1,6 +1,7 @@
-// Last updated: 2019-10-23
+// Last updated: 2019-10-30
 #include <algorithm>
 #include <assert.h>
+#include <chrono>
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -61,7 +62,6 @@ int tree_search_smaller(
     int max_pos = -1;
 
     int cur = tree_val[0];
-
     while (cur != -1)
     {
         if (tree_val[cur] == target)
@@ -120,8 +120,11 @@ void tree_delete(
     vector<int> &tree_count
 )
 {
-    // delete one instance of the node given at position pos
-    // modifies the tree passed to this function by reference
+    /*
+    Delete one instance of the node given at the target position.
+
+    Modifies the tree passed to this function by reference.
+    */
 
     tree_count[pos]--;
     if (tree_count[pos] > 0)
@@ -150,7 +153,6 @@ void tree_delete(
     }
 
 
-
     if (leaf_left)
     {
         int child = tree_right[pos];
@@ -158,7 +160,6 @@ void tree_delete(
         if (pos == tree_val[0]) // root
         {
             tree_val[0] = child;
-            tree_parent[child] = 0; // is this necessary?
             return;
         }
 
@@ -181,8 +182,6 @@ void tree_delete(
         if (pos == tree_val[0])
         {
             tree_val[0] = child;
-            tree_parent[child] = 0;
-
             return;
         }
 
@@ -199,8 +198,6 @@ void tree_delete(
     }
 
 
-
-
     // node has two children
     int min_idx = tree_right[pos];
 
@@ -209,9 +206,9 @@ void tree_delete(
         tree_val[pos] = tree_val[min_idx];
         tree_count[pos] = tree_count[min_idx];
 
-        tree_right[pos] = tree_right[min_idx];
-
         int child = tree_right[min_idx];
+
+        tree_right[pos] = child;
         if (child != -1)
             tree_parent[child] = pos;
 
@@ -220,7 +217,6 @@ void tree_delete(
 
     while (tree_left[min_idx] != -1)
         min_idx = tree_left[min_idx];
-
 
     tree_val[pos] = tree_val[min_idx];
     tree_count[pos] = tree_count[min_idx];
@@ -253,7 +249,17 @@ void build_tree(
 
     puts("Building tree...");
 
-    vector<tuple<int, int, int> > stack; // left, right, position
+    /*
+    The stack contains position ranges in the unique score vector which have yet
+    to be inserted into the tree.
+
+    (L, R, position) represents:
+        L = left index of subtree (inclusive)
+        R = right index of subtree (exclusive)
+        position = position in tree of the middle node
+    */
+
+    vector<tuple<int, int, int> > stack; // (L, R, position)
     stack.push_back(make_tuple(0, uniq_scores.size(), 1));
 
     // keep position of root node at tree_val[0]
@@ -314,29 +320,27 @@ void match_pairs()
 
     pair<vector<PII>, vector<PII> > data = read_data();
 
+
+
+    auto time_start = chrono::high_resolution_clock::now();
+
+
+
+
+
     vector<PII> pos_people = data.first;
     vector<PII> neg_people = data.second;
 
 
 
-    // 1.059 s to here
-
-
 
     puts("Preparing data...");
 
-    // sort by prop score only; MMI_ID in random order
-    sort(neg_people.begin(), neg_people.end(), sort_score);
+    vector<int> temp_neg_scores;
+    for (vector<PII>::iterator it = neg_people.begin(); it != neg_people.end(); ++it)
+        temp_neg_scores.push_back(it->second);
 
-
-
-
-
-
-    // 1.679 s to here
-
-
-
+    sort(temp_neg_scores.begin(), temp_neg_scores.end());
 
 
 
@@ -345,19 +349,14 @@ void match_pairs()
     vector<int> score_counts;
 
     // build person index and remove duplicates
-    for (vector<PII>::iterator it = neg_people.begin(); it != neg_people.end(); ++it)
-        if (uniq_scores.empty() || (it->second != uniq_scores.back()))
+    for (vector<int>::iterator it = temp_neg_scores.begin(); it != temp_neg_scores.end(); ++it)
+        if (uniq_scores.empty() || ((*it) != uniq_scores.back()))
         {
-            uniq_scores.push_back(it->second);
+            uniq_scores.push_back(*it);
             score_counts.push_back(1);
         }
         else
             score_counts.back()++;
-
-
-
-    // 1.797 s to here
-
 
 
 
@@ -381,12 +380,6 @@ void match_pairs()
         uniq_scores, score_counts,
         tree_val, tree_parent, tree_left, tree_right, tree_count
     );
-
-
-    // 1.915 s to here
-
-
-
 
 
 
@@ -437,11 +430,12 @@ void match_pairs()
     }
 
 
-    // 2.187 s to here
 
+    auto time_stop = chrono::high_resolution_clock::now();
 
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(time_stop - time_start);
 
-
+    cout << "Match time: " << duration.count() << " ms" << endl;
 
 
 
