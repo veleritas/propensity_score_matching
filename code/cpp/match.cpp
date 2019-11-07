@@ -1,5 +1,6 @@
-// Last updated: 2019-10-22
+// Last updated: 2019-10-30
 #include <algorithm>
+#include <chrono> // track runtime
 #include <fstream>
 #include <iostream>
 #include <set> // multiset
@@ -48,7 +49,11 @@ void match_pairs()
 
     pair<vector<PII>, vector<PII> > data = read_data();
 
-    // 0.662 s to run to this line
+
+
+    auto time_start = chrono::high_resolution_clock::now();
+
+
 
     vector<PII> pos_people = data.first;
     vector<PII> neg_people = data.second;
@@ -63,6 +68,7 @@ void match_pairs()
     sort(scores.begin(), scores.end());
 
     multiset<int> neg_scores(scores.begin(), scores.end());
+
 
 
     puts("Matching...");
@@ -112,34 +118,24 @@ void match_pairs()
         matched_scores.push_back(make_pair(it->first, *closest));
     }
 
-    // 2.333 s to run to this line
+
+    auto time_stop = chrono::high_resolution_clock::now();
+
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(time_stop - time_start);
 
 
-    // i don't know how to do the defaultdict
-    // for now i will just output the scores for reference
+    cout << "Match time: " << duration.count() << " ms" << endl;
+
+
 
     puts("Writing output...");
 
-    ofstream file_out("../../pipeline/cpp_v2_out.txt");
+    ofstream file_out("../../pipeline/cpp_set_out.txt");
 
     for (vector<PII>::iterator it = matched_scores.begin(); it != matched_scores.end(); ++it)
         file_out << it->first << "\t" << it->second << endl;
 
     file_out.close();
-
-    // 2.710 s to run to this line
-
-/*
-runtime:
-
-0.662 s to read data
-1.274 s to build search tree
-0.397 s to match
-0.377 s to save data
-
-total 2.710 s
-
-*/
 
 }
 
